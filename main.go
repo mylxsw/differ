@@ -13,13 +13,14 @@ import (
 )
 
 var dataDir, name, inputFile string
-var contextLine int
+var contextLine, keepVersion uint
 
 func main() {
 	flag.StringVar(&dataDir, "data-dir", "/tmp", "状态数据存储目录")
 	flag.StringVar(&name, "name", "default", "当前对比项目名称")
-	flag.IntVar(&contextLine, "context-line", 0, "输出上下文行数")
+	flag.UintVar(&contextLine, "context-line", 0, "输出上下文行数")
 	flag.StringVar(&inputFile, "file", "", "对比的文件名，留空则从标准输入读取")
+	flag.UintVar(&keepVersion, "keep-version", 100, "保留多少个版本的历史记录")
 	flag.Parse()
 
 	var target string
@@ -39,11 +40,12 @@ func main() {
 		panic(err)
 	}
 
-	differ := diff.NewDiffer(fs, dataDir, contextLine)
+	differ := diff.NewDiffer(fs, dataDir, int(contextLine))
 	res := differ.DiffLatest(name, target)
 	if err := res.PrintAndSave(os.Stdout); err != nil {
 		panic(err)
 	}
+	_ = res.Clean(keepVersion)
 }
 
 func readStdin(maxLines int) string {
